@@ -1,0 +1,361 @@
+
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>AFTERFALL — Zombie Website</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@400;600;700&display=swap');
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#171a13;color:#fff;font-family:Rajdhani,Arial,sans-serif;touch-action:none}
+canvas{display:block;position:fixed;inset:0}
+#ui{position:fixed;inset:0;z-index:2;pointer-events:none}
+#top{position:absolute;top:0;left:0;right:0;padding:18px 20px;display:flex;justify-content:space-between;background:linear-gradient(#1118,transparent)}
+.logo{font:900 13px Orbitron;letter-spacing:3px}.logo span{color:#d9ff59}
+#status{font-size:11px;letter-spacing:2px;color:#d9ff59;text-align:right}
+#mission{position:absolute;top:100px;left:20px}
+.kicker{font-size:10px;letter-spacing:3px;color:#d9ff59}
+#mission h2{font:800 17px Orbitron;margin:8px 0}
+#mission p{font-size:13px;color:#d1d3c5;margin:0}
+#progress{display:flex;gap:5px;margin-top:12px}
+.pip{width:25px;height:4px;background:#565b4a}.pip.done{background:#d9ff59}
+#cross{position:absolute;left:50%;top:50%;width:22px;height:22px;transform:translate(-50%,-50%)}
+#cross:before,#cross:after{content:"";position:absolute;background:#fff}
+#cross:before{width:2px;height:18px;left:10px;top:2px}
+#cross:after{height:2px;width:18px;top:10px;left:2px}
+#cross.hit:before,#cross.hit:after{background:#ff6358}
+#hint{position:absolute;bottom:25px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:2px;white-space:nowrap;text-shadow:0 2px 5px #000}
+#toast{position:absolute;top:37%;left:50%;transform:translate(-50%,-50%);font:900 clamp(18px,5vw,35px) Orbitron;text-align:center;opacity:0;transition:.2s;text-shadow:0 3px 15px #000;white-space:nowrap}
+#toast.show{opacity:1}
+#flash{position:absolute;inset:0;background:#eaffb7;opacity:0}
+#intro{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;text-align:center;background:#171a13;transition:opacity .8s}
+#intro.hide{opacity:0;pointer-events:none}
+.introbox{padding:25px;max-width:570px}
+.small{font-size:10px;letter-spacing:5px;color:#d9ff59}
+#intro h1{font:900 clamp(38px,10vw,82px)/.95 Orbitron;margin:25px 0;letter-spacing:-3px}
+#intro h1 span{color:#d9ff59}
+#intro p{font-size:16px;color:#c4c9b8;line-height:1.6;margin:24px auto}
+.btn{pointer-events:auto;border:0;background:#d9ff59;color:#15180f;padding:15px 24px;font:800 11px Orbitron;letter-spacing:2px;cursor:pointer}
+#panel{position:fixed;z-index:8;inset:0;display:none;align-items:center;justify-content:center;padding:16px;background:#080a08b8;backdrop-filter:blur(6px);pointer-events:auto}
+#panel.open{display:flex;animation:fade .25s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.card{width:min(600px,100%);max-height:88vh;overflow:auto;position:relative;padding:clamp(22px,5vw,40px);background:#171a14;border:1px solid #626b4c;box-shadow:0 20px 80px #000a}
+.card:before{content:"";position:absolute;top:0;left:0;width:60px;height:4px;background:#d9ff59}
+.cardtop{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:3px;color:#d9ff59}
+#close{background:none;border:1px solid #606653;color:white;padding:7px 12px;cursor:pointer}
+#panelTitle{font:900 clamp(27px,7vw,44px)/1.1 Orbitron;margin:28px 0 14px}
+#panelBody{font-size:17px;line-height:1.7;color:#c8cdbd}
+.foot{margin-top:25px;padding-top:15px;border-top:1px solid #343a2c;display:flex;justify-content:space-between;font-size:10px;letter-spacing:2px;color:#a6ad96}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.product{padding:14px;background:#22261c;border:1px solid #414a34}
+.product b{display:block;font:12px Orbitron;margin-bottom:9px}
+.product small{color:#d9ff59}
+.product button{display:block;width:100%;margin-top:12px;padding:9px;background:#d9ff59;border:0;font-weight:bold}
+#mobile{display:none;position:absolute;bottom:20px;left:0;right:0;height:120px;pointer-events:none}
+#joy{position:absolute;left:20px;bottom:0;width:105px;height:105px;border:1px solid #d9ff59a0;border-radius:50%;background:#1118;pointer-events:auto;touch-action:none}
+#knob{position:absolute;left:50%;top:50%;width:40px;height:40px;transform:translate(-50%,-50%);background:#d9ff59bb;border-radius:50%}
+#fire{position:absolute;right:20px;bottom:8px;width:74px;height:74px;border:1px solid #d9ff59;border-radius:50%;background:#d9ff5933;color:#d9ff59;font:800 11px Orbitron;pointer-events:auto;touch-action:none}
+#reload{position:absolute;right:105px;bottom:14px;padding:13px 10px;background:#20251bbb;border:1px solid #d9ff5977;color:#d9ff59;font:10px Orbitron;pointer-events:auto}
+#looktip{position:absolute;right:20px;top:85px;font-size:9px;letter-spacing:1px;color:#d9ff5999}
+@media(pointer:coarse){#mobile{display:block}#hint{bottom:160px}#mission{top:88px;left:15px}#top{padding:14px 15px}#looktip{display:block}}
+</style>
+</head>
+<body>
+<div id="ui">
+ <div id="top"><div class="logo">AFTER<span>FALL</span>®</div><div id="status">FIELD 01<br><span id="count">TARGETS: 04</span></div></div>
+ <div id="mission"><div class="kicker">MISSION / 001</div><h2>ELIMINATE TARGETS</h2><p>Shoot to unlock the world.</p><div id="progress"><i class="pip"></i><i class="pip"></i><i class="pip"></i><i class="pip"></i></div></div>
+ <div id="cross"></div><div id="toast"></div><div id="flash"></div>
+ <div id="hint">WASD MOVE &nbsp; / &nbsp; MOUSE AIM &nbsp; / &nbsp; CLICK SHOOT</div>
+ <div id="looktip">SWIPE TO LOOK</div>
+ <div id="mobile"><div id="joy"><div id="knob"></div></div><button id="reload">RELOAD</button><button id="fire">FIRE</button></div>
+</div>
+
+<div id="intro"><div class="introbox">
+ <div class="small">AN INTERACTIVE BRAND EXPERIENCE</div>
+ <h1>AFTER<span>FALL</span></h1>
+ <p>You fell into a forgotten world.<br>Four targets stand between you and the truth.</p>
+ <button class="btn" id="enter">ENTER THE WORLD ↗</button>
+ <p style="font-size:11px;letter-spacing:2px">PC: WASD + MOUSE &nbsp; / &nbsp; MOBILE: JOYSTICK + SWIPE</p>
+</div></div>
+
+<div id="panel"><div class="card">
+ <div class="cardtop"><span id="panelKicker">ARCHIVE / 001</span><button id="close">✕ CLOSE</button></div>
+ <h2 id="panelTitle">INTRODUCTION</h2><div id="panelBody"></div>
+ <div class="foot"><span>AFTERFALL®</span><span id="panelNum">FILE 01 / 04</span></div>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x929b86);
+scene.fog=new THREE.Fog(0x929b86,24,85);
+const camera=new THREE.PerspectiveCamera(72,innerWidth/innerHeight,.1,150);
+camera.rotation.order='YXZ';
+const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
+renderer.setSize(innerWidth,innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+renderer.shadowMap.enabled=false;
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+document.body.prepend(renderer.domElement);
+
+scene.add(new THREE.HemisphereLight(0xdce8c7,0x424638,2));
+const sun=new THREE.DirectionalLight(0xffe8bf,2.2);sun.position.set(-8,18,7);scene.add(sun);
+
+const mat=(c,r=.9,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
+const groundMat=mat(0x686e58);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(250,250),groundMat);
+ground.rotation.x=-Math.PI/2;ground.position.y=-.12;scene.add(ground);
+
+// Stylized wasteland ground markings
+for(let i=0;i<110;i++){
+ const size=.15+Math.random()*1.1;
+ const rock=new THREE.Mesh(new THREE.DodecahedronGeometry(size,.0),mat([0x777a62,0x545b49,0x888571,0x41483c][i%4]));
+ rock.position.set((Math.random()-.5)*90,.02,(Math.random()-.5)*100);
+ rock.scale.y=.12+Math.random()*.15;scene.add(rock);
+}
+for(let i=0;i<34;i++){
+ const h=1+Math.random()*5;
+ const geo=new THREE.BoxGeometry(.3+Math.random(),h,.4+Math.random());
+ const b=new THREE.Mesh(geo,mat(0x4a5045));
+ b.position.set((Math.random()-.5)*85,h/2,(Math.random()-.5)*95-15);
+ if(Math.abs(b.position.x)<9&&b.position.z>-32&&b.position.z<8){b.position.x+=15}
+ scene.add(b);
+}
+
+// Simple chunky first-person pistol
+const gun=new THREE.Group();
+const gunmat=mat(0x252a25,.42,.35), gripmat=mat(0x555c48), metal=mat(0x89907d,.35,.55);
+function box(parent,w,h,d,material,x,y,z){
+ const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+ o.position.set(x,y,z);parent.add(o);return o;
+}
+box(gun,.19,.16,.4,gunmat,0,0,0);
+box(gun,.14,.23,.13,gripmat,0,-.16,.1).rotation.x=-.15;
+box(gun,.095,.075,.3,metal,0,.075,-.22);
+box(gun,.12,.07,.2,gunmat,0,.06,-.44);
+box(gun,.025,.025,.04,mat(0xd9ff59),0,.115,-.3);
+gun.position.set(.38,-.34,-.65);camera.add(gun);scene.add(camera);
+let recoil=0;
+const muzzle=new THREE.PointLight(0xffb85a,0,4);muzzle.position.set(0,.04,-.53);gun.add(muzzle);
+
+// Trees and dead scrub
+const trunkMat=mat(0x514d3b),leafMat=mat(0x424c3b);
+for(let i=0;i<28;i++){
+ let x=(Math.random()-.5)*85,z=-10-Math.random()*65;
+ if(Math.abs(x)<7)continue;
+ const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.12,.22,2.5,5),trunkMat);
+ trunk.position.set(x,1.15,z);scene.add(trunk);
+ for(let j=0;j<3;j++){
+  const branch=new THREE.Mesh(new THREE.ConeGeometry(.9-j*.15,1.8,5),leafMat);
+  branch.position.set(x+(Math.random()-.5)*.6,2.3+j*.35,z);branch.rotation.z=(Math.random()-.5)*.6;scene.add(branch);
+ }
+}
+
+// Four immobile stylized zombie figures facing the player
+const zombies=[];
+const skin=mat(0x9ca58a),darkskin=mat(0x707a62),shirt=mat(0x596450),pants=mat(0x393e35),eye=mat(0xe3ff91, .35),black=mat(0x1b201a);
+function makeZombie(index,x,z){
+ const g=new THREE.Group();
+ const body=new THREE.Mesh(new THREE.BoxGeometry(.85,1.05,.42),shirt);body.position.y=1.43;g.add(body);
+ const head=new THREE.Mesh(new THREE.BoxGeometry(.57,.64,.53),skin);head.position.set(0,2.32,0);g.add(head);
+ const hair=new THREE.Mesh(new THREE.BoxGeometry(.6,.16,.56),darkskin);hair.position.set(0,2.66,0);g.add(hair);
+ for(const s of [-1,1]){
+  const e=new THREE.Mesh(new THREE.BoxGeometry(.12,.095,.055),eye);e.position.set(s*.145,2.36,-.278);g.add(e);
+  const pupil=new THREE.Mesh(new THREE.BoxGeometry(.045,.07,.02),black);pupil.position.set(s*.145,2.35,-.31);g.add(pupil);
+  const leg=new THREE.Mesh(new THREE.BoxGeometry(.29,.85,.32),pants);leg.position.set(s*.23,.48,0);g.add(leg);
+  const arm=new THREE.Mesh(new THREE.BoxGeometry(.25,.87,.28),skin);arm.position.set(s*.59,1.47,-.01);arm.rotation.z=s*.16;g.add(arm);
+  const hand=new THREE.Mesh(new THREE.BoxGeometry(.25,.2,.25),darkskin);hand.position.set(s*.64,1.02,-.01);g.add(hand);
+ }
+ const mouth=new THREE.Mesh(new THREE.BoxGeometry(.25,.055,.03),black);mouth.position.set(0,2.14,-.28);g.add(mouth);
+ const tag=document.createElement('div');
+ tag.textContent=['01 / INTRO','02 / SHOP','03 / ABOUT','04 / CONTACT'][index];
+ tag.style.cssText='position:absolute;color:#d9ff59;font:10px Orbitron;letter-spacing:2px;white-space:nowrap;text-shadow:0 2px 4px #000;display:none';
+ // Floating world marker using a tiny 3D plate
+ const marker=new THREE.Mesh(new THREE.BoxGeometry(.7,.06,.05),mat(0xd9ff59));
+ marker.position.set(0,3.05,0);g.add(marker);
+ g.position.set(x,0,z);scene.add(g);
+ zombies.push({group:g,dead:false,index,body,head});
+}
+[-4.5,-1.5,1.5,4.5].forEach((x,i)=>makeZombie(i,x,-15));
+
+// Crosshair raycast
+const raycaster=new THREE.Raycaster();
+const targets=[];
+zombies.forEach(z=>z.group.traverse(o=>{if(o.isMesh)targets.push({mesh:o,zombie:z})}));
+const targetMeshes=targets.map(t=>t.mesh);
+const map=new Map(targets.map(t=>[t.mesh,t.zombie]));
+
+let yaw=0,pitch=0,started=false,falling=false,landed=false,shotCooldown=0;
+const keys={};
+const player={x:0,y:2,z:4};
+camera.position.set(0,24,12);
+let fallTime=0;
+const unlocked=[false,false,false,false];
+let touchLook=null,joy={x:0,y:0},joyPointer=null,shooting=false;
+let lastToast=0;
+
+function toast(s){
+ $('toast').textContent=s;$('toast').classList.add('show');lastToast=performance.now();
+}
+function updateProgress(){
+ document.querySelectorAll('.pip').forEach((p,i)=>p.classList.toggle('done',unlocked[i]));
+ $('count').textContent='TARGETS: '+(4-unlocked.filter(Boolean).length).toString().padStart(2,'0');
+}
+function openPanel(i){
+ const titles=['INTRODUCTION','SHOP','ABOUT US','CONTACT US'];
+ const bodies=[
+  `<p>Welcome to <b style="color:#d9ff59">AFTERFALL</b> — a world built from strange ideas, independent culture and creative experiments.</p><p>This is the beginning. Explore the wasteland, discover our identity and unlock the story one target at a time.</p><p style="color:#d9ff59">WELCOME TO OUR WORLD.</p>`,
+  `<p>Independent goods for people who walk their own path.</p><div class="grid"><div class="product"><b>FIELD JACKET</b><small>RM 189.00</small><button onclick="window.shopAction('FIELD JACKET')">VIEW ITEM ↗</button></div><div class="product"><b>AFTERFALL TEE</b><small>RM 79.00</small><button onclick="window.shopAction('AFTERFALL TEE')">VIEW ITEM ↗</button></div><div class="product"><b>UTILITY BAG</b><small>RM 99.00</small><button onclick="window.shopAction('UTILITY BAG')">VIEW ITEM ↗</button></div><div class="product"><b>WORLD PACK</b><small>RM 39.00</small><button onclick="window.shopAction('WORLD PACK')">VIEW ITEM ↗</button></div></div>`,
+  `<p>We create digital experiences that mix game worlds, street culture and interactive design.</p><p>AFTERFALL is an independent creative concept. Every detail is designed to feel like a discovery — not another ordinary website.</p><p style="color:#d9ff59">OUR VISION: MAKE THE INTERNET FEEL LIKE A WORLD AGAIN.</p>`,
+  `<p>Got a project, collaboration or just want to say hello?</p><p>Email: <a style="color:#d9ff59" href="mailto:hello@afterfall.example">hello@afterfall.example</a></p><p>Instagram: <a style="color:#d9ff59" href="https://instagram.com/" target="_blank" rel="noreferrer">@afterfall</a></p><p>Replace these demo details with your real brand contact links.</p>`
+ ];
+ $('panelKicker').textContent='ARCHIVE / 00'+(i+1);
+ $('panelTitle').textContent=titles[i];
+ $('panelBody').innerHTML=bodies[i];
+ $('panelNum').textContent='FILE 0'+(i+1)+' / 04';
+ $('panel').classList.add('open');
+}
+window.shopAction=(name)=>{toast(name+' SELECTED');};
+$('close').onclick=()=>{$('panel').classList.remove('open');};
+$('panel').addEventListener('click',e=>{if(e.target===$('panel'))$('panel').classList.remove('open')});
+
+function shoot(){
+ if(!started||$('panel').classList.contains('open')||shotCooldown>0)return;
+ shotCooldown=.25;recoil=.1;muzzle.intensity=5;
+ $('flash').style.opacity='.22';setTimeout(()=>$('flash').style.opacity='0',45);
+ $('cross').classList.add('hit');setTimeout(()=>$('cross').classList.remove('hit'),130);
+ raycaster.setFromCamera(new THREE.Vector2(0,0),camera);
+ const hits=raycaster.intersectObjects(targetMeshes,false);
+ let found=null;
+ for(const hit of hits){
+  const z=map.get(hit.object);
+  if(z&&!z.dead){found=z;break;}
+ }
+ if(found){
+  found.dead=true;
+  found.group.rotation.z=(Math.random()>.5?1:-1)*1.3;
+  found.group.position.y=-.8;
+  found.group.traverse(o=>{if(o.material&&o.material.emissive){o.material.emissive.setHex(0x333333)}});
+  unlocked[found.index]=true;updateProgress();
+  const names=['INTRODUCTION UNLOCKED','SHOP UNLOCKED','ABOUT US UNLOCKED','CONTACT US UNLOCKED'];
+  toast(names[found.index]);
+  setTimeout(()=>openPanel(found.index),550);
+  if(unlocked.every(Boolean))setTimeout(()=>toast('WORLD CLEARED'),1800);
+ }else{
+  toast('MISS'); 
+ }
+}
+
+function startGame(){
+ if(started)return;
+ started=true;falling=true;fallTime=0;
+ $('intro').classList.add('hide');
+ if(matchMedia('(pointer:fine)').matches&&renderer.domElement.requestPointerLock){
+  renderer.domElement.requestPointerLock();
+ }
+}
+$('enter').onclick=startGame;
+renderer.domElement.addEventListener('click',()=>{
+ if(!started)return;
+ if(matchMedia('(pointer:fine)').matches&&document.pointerLockElement!==renderer.domElement&&!$('panel').classList.contains('open')){
+  renderer.domElement.requestPointerLock?.();
+ }else shoot();
+});
+document.addEventListener('pointerlockchange',()=>{});
+document.addEventListener('mousemove',e=>{
+ if(!started||document.pointerLockElement!==renderer.domElement||$('panel').classList.contains('open'))return;
+ yaw-=e.movementX*.0025;
+ pitch-=e.movementY*.0025;
+ pitch=Math.max(-1.1,Math.min(1.1,pitch));
+});
+document.addEventListener('keydown',e=>{
+ keys[e.code]=true;
+ if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+ if(e.code==='Space')shoot();
+ if(e.code==='KeyR'){toast('PISTOL READY');}
+});
+document.addEventListener('keyup',e=>keys[e.code]=false);
+
+// Mobile joystick
+const joyEl=$('joy'),knob=$('knob');
+joyEl.addEventListener('pointerdown',e=>{
+ joyPointer=e.pointerId;joyEl.setPointerCapture(e.pointerId);moveJoy(e);
+});
+joyEl.addEventListener('pointermove',e=>{if(e.pointerId===joyPointer)moveJoy(e)});
+function moveJoy(e){
+ const r=joyEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+ let dx=e.clientX-cx,dy=e.clientY-cy;
+ const max=35,len=Math.hypot(dx,dy);
+ if(len>max){dx=dx/len*max;dy=dy/len*max}
+ joy.x=dx/max;joy.y=dy/max;
+ knob.style.left=`calc(50% + ${dx}px)`;knob.style.top=`calc(50% + ${dy}px)`;
+}
+function resetJoy(){joy={x:0,y:0};joyPointer=null;knob.style.left='50%';knob.style.top='50%'}
+joyEl.addEventListener('pointerup',resetJoy);joyEl.addEventListener('pointercancel',resetJoy);
+$('fire').addEventListener('pointerdown',e=>{e.preventDefault();shoot()});
+$('reload').addEventListener('click',()=>toast('PISTOL READY'));
+
+// Mobile swipe look, with UI controls excluded
+renderer.domElement.addEventListener('pointerdown',e=>{
+ if(e.pointerType==='touch'){touchLook={x:e.clientX,y:e.clientY,id:e.pointerId};}
+});
+renderer.domElement.addEventListener('pointermove',e=>{
+ if(!touchLook||touchLook.id!==e.pointerId||e.pointerType!=='touch'||!started)return;
+ const dx=e.clientX-touchLook.x,dy=e.clientY-touchLook.y;
+ yaw-=dx*.005;pitch-=dy*.004;
+ pitch=Math.max(-1.1,Math.min(1.1,pitch));
+ touchLook.x=e.clientX;touchLook.y=e.clientY;
+});
+renderer.domElement.addEventListener('pointerup',e=>{if(touchLook&&touchLook.id===e.pointerId)touchLook=null});
+renderer.domElement.addEventListener('pointercancel',()=>touchLook=null);
+
+const clock=new THREE.Clock();
+function animate(){
+ requestAnimationFrame(animate);
+ const dt=Math.min(clock.getDelta(),.04);
+ shotCooldown=Math.max(0,shotCooldown-dt);
+ recoil=Math.max(0,recoil-dt*.7);muzzle.intensity=Math.max(0,muzzle.intensity-dt*35);
+ if(falling){
+  fallTime+=dt;
+  const t=Math.min(fallTime/2.1,1);
+  const ease=1-Math.pow(1-t,3);
+  camera.position.set(player.x,24+(1.75-24)*ease,12+(4-12)*ease);
+  camera.rotation.set((1-ease)*.28+Math.sin(fallTime*18)*.012*(1-t),yaw,pitch,'YXZ');
+  if(t>=1){falling=false;landed=true;camera.position.y=1.72;toast('YOU HAVE LANDED');setTimeout(()=>toast('FIND THE FOUR TARGETS'),1400)}
+ }
+ if(started&&!falling&&landed&&!$('panel').classList.contains('open')){
+  camera.rotation.set(pitch,yaw,0,'YXZ');
+  const forward=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+  const right=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+  let mx=0,mz=0;
+  if(keys.KeyW||keys.ArrowUp)mz+=1;
+  if(keys.KeyS||keys.ArrowDown)mz-=1;
+  if(keys.KeyA||keys.ArrowLeft)mx-=1;
+  if(keys.KeyD||keys.ArrowRight)mx+=1;
+  mx+=joy.x;mz-=joy.y;
+  const len=Math.hypot(mx,mz);
+  if(len>1){mx/=len;mz/=len}
+  const speed=4.2*dt;
+  camera.position.addScaledVector(forward,mz*speed);
+  camera.position.addScaledVector(right,mx*speed);
+  camera.position.x=Math.max(-13,Math.min(13,camera.position.x));
+  camera.position.z=Math.max(-28,Math.min(9,camera.position.z));
+  camera.position.y=1.72;
+  gun.position.y=-.34+Math.sin(performance.now()*.009)*.006*(Math.abs(mx)+Math.abs(mz));
+  gun.position.z=-.65+recoil;
+ }
+ renderer.render(scene,camera);
+}
+animate();
+addEventListener('resize',()=>{
+ camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
+updateProgress();
+})();
+</script>
+</body>
+</html>
